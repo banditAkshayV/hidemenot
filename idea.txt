@@ -1,0 +1,87 @@
+🔐 Challenge Name: hidemenot
+
+A seemingly simple steganography web app... but appearances deceive. Your mission is to uncover the final flag hidden through layers of obfuscation, timing, and clever exploitation.
+
+🧰 Application Overview
+
+hidemenot is a vulnerable web application focused on steganography—hiding messages inside images using LSB (least significant bit) encoding.
+
+Features:
+
+User registration and login.
+
+Encode page: Upload an image and embed text inside it.
+
+Decode page: Upload an image and extract embedded text.
+
+Hidden admin directories with sensitive info, inaccessible via links or normal browsing.
+
+The homepage always shows a demo image initially, which changes to the crash image after a crash event is triggered.
+
+🧩 Player Walkthrough
+1. Explore Basic Features
+
+Register and log in.
+
+Use the Encode page to hide text in images.
+
+Use the Decode page to extract text from images.
+
+The homepage shows a demo image at first.
+
+2. Trigger Server Crash via Magic Byte Mismatch / Polyglot Upload
+
+The “upload image” field on the Encode page accepts images.
+
+Uploading a specially crafted polyglot image file (with magic byte mismatch) triggers a simulated server crash and redirects back to the homepage.
+
+Upon this crash event, the homepage’s demo image is replaced by the crash image.
+
+3. Discover Hidden Clue in Source Code
+
+After redirection, inspect the homepage’s HTML source.
+
+There’s a hidden comment revealing the URL to the crash image currently displayed:
+
+<!-- crash_image_url: /static/uploads/crash123.png -->
+
+
+This crash image is encoded using a different LSB method than normal.
+
+4. Decode with a Custom LSB Method
+
+Download the crash image.
+
+The usual decode tool won’t work.
+
+The crash image uses a different LSB encoding technique (e.g., 2nd or 4th least significant bit, or channel-specific LSB).
+
+Decoding reveals:
+
+[!] Crash logged at: /adminrandomhashorlongtexttopreventguess/logs/2025-08-28.log
+
+5. Time-Sensitive Log File
+
+The /adminrandomlongtexthere/logs/YYYY-MM-DD.log file exists only for 5 minutes after the crash event (with date dynamically generated).
+
+After 5 minutes, accessing the file returns:
+
+Too late. File deleted.
+
+6. Read the Log File Content
+
+If accessed in time, the log file contains:
+
+[INFO] File saved to /adminrandomhashorlongtexttopreventguess/flag.txt
+[SECURITY] Access limited to internal host 127.0.0.1
+
+7. Bypass Host-Based Access Control
+
+Trying to directly access /adminrandomlongtexthere/flag.txt results in:
+
+Access Denied. Redirecting to a Rickroll video.
+
+
+However, modifying the Host header to 127.0.0.1 bypasses this check.
+
+The server then reveals the final flag!

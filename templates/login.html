@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Login - hidemenot{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-5 col-md-7">
+        <div class="card">
+            <div class="card-header text-center">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-sign-in-alt me-2"></i>Welcome Back
+                </h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted text-center mb-4">
+                    Login to access your steganography workspace
+                </p>
+                
+                <form method="POST" id="loginForm">
+                    <div class="mb-4">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-user me-1"></i>Username
+                        </label>
+                        <input type="text" class="form-control" id="username" name="username" 
+                               required
+                               placeholder="Enter your username"
+                               autocomplete="username">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock me-1"></i>Password
+                        </label>
+                        <div class="position-relative">
+                            <input type="password" class="form-control" id="password" name="password" 
+                                   required
+                                   placeholder="Enter your password"
+                                   autocomplete="current-password">
+                            <button type="button" class="btn btn-link position-absolute end-0 top-50 translate-middle-y"
+                                    onclick="togglePassword()" style="border: none; background: none;">
+                                <i class="fas fa-eye" id="password-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="remember_me">
+                            <label class="form-check-label" for="remember_me">
+                                Remember me
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </button>
+                    </div>
+                </form>
+                
+                <hr class="my-4">
+                
+                <div class="text-center">
+                    <p class="text-muted mb-0">
+                        Don't have an account?
+                        <a href="{{ url_for('register') }}" class="text-decoration-none">
+                            <i class="fas fa-user-plus me-1"></i>Register here
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Info Section -->
+        <div class="card mt-4 bg-transparent border-0">
+            <div class="card-body text-white text-center">
+                <h5 class="mb-3">
+                    <i class="fas fa-info-circle me-2"></i>Quick Start Guide
+                </h5>
+                <div class="row">
+                    <div class="col-4">
+                        <div class="mb-2">
+                            <i class="fas fa-upload fa-2x"></i>
+                        </div>
+                        <small>1. Upload Image</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="mb-2">
+                            <i class="fas fa-edit fa-2x"></i>
+                        </div>
+                        <small>2. Add Message</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="mb-2">
+                            <i class="fas fa-download fa-2x"></i>
+                        </div>
+                        <small>3. Download Result</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Demo Credentials (for testing) -->
+        <div class="card mt-3 bg-transparent border border-warning">
+            <div class="card-body text-white text-center">
+                <h6 class="text-warning">
+                    <i class="fas fa-flask me-2"></i>Demo Mode
+                </h6>
+                <small>
+                    Try the platform with any username and password combination.<br>
+                    Registration creates a new account automatically.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function togglePassword() {
+        const field = document.getElementById('password');
+        const eye = document.getElementById('password-eye');
+        
+        if (field.type === 'password') {
+            field.type = 'text';
+            eye.classList.remove('fa-eye');
+            eye.classList.add('fa-eye-slash');
+        } else {
+            field.type = 'password';
+            eye.classList.remove('fa-eye-slash');
+            eye.classList.add('fa-eye');
+        }
+    }
+    
+    // Add loading state to login button
+    document.getElementById('loginForm').addEventListener('submit', function() {
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Logging in...';
+        submitBtn.disabled = true;
+        
+        // Re-enable button after 5 seconds in case of server error
+        setTimeout(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }, 5000);
+    });
+    
+    // Focus on username field when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('username').focus();
+    });
+    
+    // Add Enter key support
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('loginForm').submit();
+        }
+    });
+</script>
+{% endblock %}

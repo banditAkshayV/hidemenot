@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}hidemenot - Home{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container">
+        <h1 class="hero-title">
+            <i class="fas fa-eye-slash"></i> hidemenot
+        </h1>
+        <p class="hero-subtitle">
+            Advanced Steganography Platform - Hide your secrets in plain sight
+        </p>
+        {% if not current_user.is_authenticated %}
+        <div class="mt-4">
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg me-3">
+                <i class="fas fa-user-plus me-2"></i>Get Started
+            </a>
+            <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg">
+                <i class="fas fa-sign-in-alt me-2"></i>Login
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-image me-2"></i>Demo Image
+                </h3>
+            </div>
+            <div class="card-body text-center">
+                <p class="text-muted mb-4">
+                    This is a demonstration of our steganography capabilities. 
+                    The image below may contain hidden messages.
+                </p>
+                
+                <div class="image-container">
+                    <img src="{{ image_url }}" alt="Demo Image" class="image-preview img-fluid">
+                </div>
+                
+             
+
+                {% if current_user.is_authenticated %}
+                <div class="mt-4">
+                    <a href="{{ url_for('encode') }}" class="btn btn-primary me-3">
+                        <i class="fas fa-lock me-2"></i>Hide Message
+                    </a>
+                    <a href="{{ url_for('decode') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-unlock me-2"></i>Extract Message
+                    </a>
+                </div>
+                {% else %}
+                <div class="mt-4">
+                    <p class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Please <a href="{{ url_for('register') }}" class="text-decoration-none">register</a> 
+                        or <a href="{{ url_for('login') }}" class="text-decoration-none">login</a> 
+                        to use the steganography features.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-lock fa-3x text-primary"></i>
+                </div>
+                <h5 class="card-title">Encode Messages</h5>
+                <p class="card-text">
+                    Hide secret messages inside images using advanced LSB steganography techniques.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-unlock fa-3x text-success"></i>
+                </div>
+                <h5 class="card-title">Decode Messages</h5>
+                <p class="card-text">
+                    Extract hidden messages from images with our powerful decoding algorithms.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-shield-alt fa-3x text-warning"></i>
+                </div>
+                <h5 class="card-title">Secure & Private</h5>
+                <p class="card-text">
+                    Your messages are processed securely with no server-side storage of sensitive data.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if crash_comment %}
+{{ crash_comment|safe }}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Add some interactive effects
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add hover effects to feature cards
+        const cards = document.querySelectorAll('.card');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px)';
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+        
+        // Add click to enlarge image
+        const demoImage = document.querySelector('.image-preview');
+        if (demoImage) {
+            demoImage.style.cursor = 'pointer';
+            demoImage.addEventListener('click', function() {
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0,0,0,0.9); display: flex; align-items: center;
+                    justify-content: center; z-index: 9999; cursor: pointer;
+                `;
+                
+                const img = document.createElement('img');
+                img.src = this.src;
+                img.style.cssText = 'max-width: 90%; max-height: 90%; border-radius: 12px;';
+                
+                modal.appendChild(img);
+                document.body.appendChild(modal);
+                
+                modal.addEventListener('click', function() {
+                    document.body.removeChild(modal);
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

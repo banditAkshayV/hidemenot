@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Encode - hidemenot{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-lock me-2"></i>Hide Secret Message
+                </h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">
+                    Upload an image and embed your secret message using LSB steganography.
+                    The message will be invisible to the naked eye but can be extracted later.
+                </p>
+                
+                <form method="POST" enctype="multipart/form-data" id="encodeForm">
+                    <!-- Image Upload Section -->
+                    <div class="mb-4">
+                        <label for="image" class="form-label">
+                            <i class="fas fa-image me-1"></i>Select Image
+                        </label>
+                        <div class="upload-area" id="uploadArea">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h5 class="mt-3 mb-2">Choose an image file</h5>
+                            <p class="text-muted mb-3">
+                                Drag and drop or click to select<br>
+                                Supports: PNG, JPG, JPEG (Max: 10MB)
+                            </p>
+                            <input type="file" class="form-control d-none" id="image" name="image" 
+                                   accept="image/*" required>
+                            <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('image').click()">
+                                <i class="fas fa-folder-open me-2"></i>Browse Files
+                            </button>
+                        </div>
+                        <div id="imagePreview" class="mt-3" style="display: none;">
+                            <img id="previewImg" class="image-preview" alt="Preview">
+                            <div class="mt-2">
+                                <small class="text-muted">Selected: <span id="fileName"></span></small>
+                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearImage()">
+                                    <i class="fas fa-times"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Message Input Section -->
+                    <div class="mb-4">
+                        <label for="message" class="form-label">
+                            <i class="fas fa-comment-alt me-1"></i>Secret Message
+                        </label>
+                        <textarea class="form-control" id="message" name="message" rows="4" 
+                                  placeholder="Enter your secret message here..." 
+                                  required maxlength="1000"></textarea>
+                        <div class="form-text">
+                            <span id="charCount">0</span>/1000 characters
+                            <span class="float-end">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Longer messages require larger images
+                            </span>
+                        </div>
+                    </div>
+                    
+
+                    
+                    <!-- Submit Button -->
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                            <i class="fas fa-lock me-2"></i>Hide Message in Image
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Result Section -->
+                {% if result_image %}
+                <div class="mt-5">
+                    <hr>
+                    <h4 class="text-success">
+                        <i class="fas fa-check-circle me-2"></i>Message Successfully Hidden!
+                    </h4>
+                    <p class="text-muted">
+                        Your secret message has been embedded in the image. Download it below:
+                    </p>
+                    
+                    <div class="text-center">
+                        <img src="{{ result_image }}" alt="Encoded Image" class="image-preview mb-3">
+                        <div>
+                            <a href="{{ result_image }}" download class="btn btn-success btn-lg">
+                                <i class="fas fa-download me-2"></i>Download Encoded Image
+                            </a>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                The image looks identical but contains your hidden message
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Tips Section -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card border-0 bg-transparent text-white text-center h-100">
+                    <div class="card-body">
+                        <i class="fas fa-lightbulb fa-2x mb-3 text-warning"></i>
+                        <h6>Pro Tip</h6>
+                        <small>Larger images can hide longer messages more effectively</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-transparent text-white text-center h-100">
+                    <div class="card-body">
+                        <i class="fas fa-eye-slash fa-2x mb-3 text-info"></i>
+                        <h6>Invisible</h6>
+                        <small>Changes are imperceptible to human vision</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-transparent text-white text-center h-100">
+                    <div class="card-body">
+                        <i class="fas fa-lock fa-2x mb-3 text-success"></i>
+                        <h6>Secure</h6>
+                        <small>Only those with the encoded image can extract the message</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // File upload handling
+    const imageInput = document.getElementById('image');
+    const uploadArea = document.getElementById('uploadArea');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    const fileName = document.getElementById('fileName');
+    
+    // Message character counter
+    const messageInput = document.getElementById('message');
+    const charCount = document.getElementById('charCount');
+    
+    messageInput.addEventListener('input', function() {
+        charCount.textContent = this.value.length;
+    });
+    
+    // Drag and drop functionality
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('border-primary');
+        this.style.backgroundColor = 'rgba(99, 102, 241, 0.1)';
+    });
+    
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.classList.remove('border-primary');
+        this.style.backgroundColor = '';
+    });
+    
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('border-primary');
+        this.style.backgroundColor = '';
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            imageInput.files = files;
+            handleImageSelect();
+        }
+    });
+    
+    imageInput.addEventListener('change', handleImageSelect);
+    
+    function handleImageSelect() {
+        const file = imageInput.files[0];
+        if (!file) return;
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            alert('Please select a valid image file.');
+            return;
+        }
+        
+        // Validate file size (10MB limit)
+        if (file.size > 10 * 1024 * 1024) {
+            alert('File size must be less than 10MB.');
+            return;
+        }
+        
+        // Show preview
+        fileName.textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            imagePreview.style.display = 'block';
+            uploadArea.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    function clearImage() {
+        imageInput.value = '';
+        imagePreview.style.display = 'none';
+        uploadArea.style.display = 'block';
+    }
+    
+    // Form submission with loading state
+    document.getElementById('encodeForm').addEventListener('submit', function(e) {
+        const submitBtn = document.getElementById('submitBtn');
+        const originalText = submitBtn.innerHTML;
+        
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing Image...';
+        submitBtn.disabled = true;
+        
+        // Re-enable after delay in case of error
+        setTimeout(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }, 10000);
+    });
+    
+
+</script>
+{% endblock %}
