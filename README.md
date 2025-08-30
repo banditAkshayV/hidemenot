@@ -99,26 +99,30 @@ A sophisticated web application that combines steganography with multiple securi
 9. **Read Log Content**
    ```
    [INFO] Server crash detected - polyglot file upload
-   [INFO] Dynamic flag generated: CTF{st3g4n0gr4phy_4nd_t1m1ng_m4st3r_20250101_120000_a1b2c3d4}
+   [INFO] Dynamic flag file: /adminrandomhashorlongtexttopreventguess/logs/flag_2025-08-30_10-52-18_c736f7.txt
    [SECURITY] Access limited to internal host 127.0.0.1
    ```
 
 ### Stage 6: Host Header Bypass
-10. **Attempt Direct Access**
-    - Try accessing `/adminrandomhashorlongtexttopreventguess/flag.txt`
+10. **Extract Dynamic Flag Path**
+    - The log file contains the path to the dynamic flag file
+    - Example: `/adminrandomhashorlongtexttopreventguess/logs/flag_2025-08-30_10-52-18_c736f7.txt`
+
+11. **Attempt Direct Access**
+    - Try accessing the dynamic flag path
     - You'll be redirected to a Rickroll video
 
-11. **Bypass with Host Header**
+12. **Bypass with Host Header**
     - Use curl or modify the Host header to `127.0.0.1`:
       ```bash
-      curl -H "Host: 127.0.0.1" http://localhost:5000/adminrandomhashorlongtexttopreventguess/flag.txt
+      curl -H "Host: 127.0.0.1" http://localhost:5000/adminrandomhashorlongtexttopreventguess/logs/flag_2025-08-30_10-52-18_c736f7.txt
       ```
     - Or use browser developer tools to modify the request
 
-12. **Capture the Final Flag**
-    - Successfully bypassing the host check reveals the dynamic flag from the log file:
+13. **Capture the Final Flag**
+    - Successfully bypassing the host check reveals the dynamic flag:
       ```
-      🎉 Congratulations! You found the final flag: CTF{st3g4n0gr4phy_4nd_t1m1ng_m4st3r_20250101_120000_a1b2c3d4}
+      🎉 Congratulations! You found the final flag: CTF{st3g4n0gr4phy_4nd_t1m1ng_m4st3r_20250830_105218_bafc881b}
       ```
 
 ## 🛠️ Technical Implementation
@@ -159,7 +163,7 @@ findmenot/
 │   ├── images/          # Demo images
 │   └── uploads/         # User uploaded files
 └── adminrandomhashorlongtexttopreventguess/
-    └── logs/            # Time-sensitive log files with dynamic flags
+    └── logs/            # Time-sensitive log files and dynamic flag files
 ```
 
 ### Key Functions

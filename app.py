@@ -168,21 +168,30 @@ def trigger_crash():
     ts_str = crash_timestamp.strftime("%Y-%m-%d_%H-%M-%S")
     suffix = secrets.token_hex(3)
     log_filename = f"{ts_str}_{suffix}.log"
+    flag_filename = f"flag_{ts_str}_{suffix}.txt"
     log_path = os.path.join('adminrandomhashorlongtexttopreventguess', 'logs', log_filename)
+    flag_path = os.path.join('adminrandomhashorlongtexttopreventguess', 'logs', flag_filename)
     
     log_content = f"""[INFO] Server crash detected - polyglot file upload
-[INFO] Dynamic flag generated: {dynamic_flag}
+[INFO] Dynamic flag file: /adminrandomhashorlongtexttopreventguess/logs/{flag_filename}
 [SECURITY] Access limited to internal host 127.0.0.1
 [TIMESTAMP] {crash_timestamp.strftime("%Y-%m-%d %H:%M:%S")}"""
     
     with open(log_path, 'w') as f:
         f.write(log_content)
     
+    # Create dynamic flag file
+    flag_content = f"🎉 Congratulations! You found the final flag: {dynamic_flag}"
+    with open(flag_path, 'w') as f:
+        f.write(flag_content)
+    
     # Schedule file deletion after 2 minutes
     def delete_log():
         time.sleep(120)
         if os.path.exists(log_path):
             os.remove(log_path)
+        if os.path.exists(flag_path):
+            os.remove(flag_path)
     
     threading.Thread(target=delete_log, daemon=True).start()
     
@@ -195,7 +204,7 @@ def trigger_crash():
     else:
         demo_img = Image.new('RGB', (400, 300), color='lightblue')
     
-    hidden_message = f"[!] Crash logged at: /adminrandomhashorlongtexttopreventguess/logs/{log_filename}"
+    hidden_message = f"[!] Crash logged at: /adminrandomhashorlongtexttopreventguess/logs/{log_filename}\n[!] Flag available at: /adminrandomhashorlongtexttopreventguess/logs/{flag_filename}"
     crash_img = encode_lsb_alternative(demo_img, hidden_message)
     crash_img.save(crash_img_path)
     
@@ -380,36 +389,28 @@ def admin_logs(filename):
     
     return f"<pre>{content}</pre>"
 
-@app.route('/adminrandomhashorlongtexttopreventguess/flag.txt')
-def admin_flag():
-    """Final flag with host-based access control"""
+@app.route('/adminrandomhashorlongtexttopreventguess/logs/flag_<timestamp>_<suffix>.txt')
+def admin_flag(timestamp, suffix):
+    """Dynamic flag endpoint with host-based access control"""
     # Check Host header
     host = request.headers.get('Host', '')
     if '127.0.0.1' not in host and 'localhost' not in host:
         print(f"DEBUG: Host header: {host}")
         return redirect('https://www.youtube.com/watch?v=dQw4w9WgXcQ')  # Rickroll
     
-    # Find the most recent log file to get the dynamic flag
-    log_files = glob.glob('adminrandomhashorlongtexttopreventguess/logs/*.log')
-    if not log_files:
-        return "Flag not available yet. Trigger crash first.", 404
+    # Construct the flag file path
+    flag_filename = f"flag_{timestamp}_{suffix}.txt"
+    flag_path = os.path.join('adminrandomhashorlongtexttopreventguess', 'logs', flag_filename)
     
-    # Get the most recent log file
-    latest_log = max(log_files, key=os.path.getmtime)
+    if not os.path.exists(flag_path):
+        return "Flag file not found or expired.", 404
     
     try:
-        with open(latest_log, 'r') as f:
-            log_content = f.read()
-        
-        # Extract the dynamic flag from the log content
-        for line in log_content.split('\n'):
-            if line.startswith('[INFO] Dynamic flag generated:'):
-                flag = line.split('Dynamic flag generated:')[1].strip()
-                return f"<pre>🎉 Congratulations! You found the final flag: {flag}</pre>"
-        
-        return "Flag not found in log file.", 404
+        with open(flag_path, 'r') as f:
+            flag_content = f.read()
+        return f"<pre>{flag_content}</pre>"
     except Exception as e:
-        return f"Error reading log file: {str(e)}", 500
+        return f"Error reading flag file: {str(e)}", 500
 
 @app.route('/decode-alternative')
 @login_required

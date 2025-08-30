@@ -52,7 +52,7 @@ findmenot/
 │   ├── images/              # Demo images
 │   └── uploads/             # User uploaded files
 ├── adminrandomhashorlongtexttopreventguess/  # Hidden admin directory
-│   └── logs/                # Time-sensitive log files with dynamic flags
+│   └── logs/                # Time-sensitive log files and dynamic flag files
 └── database.db             # SQLite database (auto-created)
 ```
 
