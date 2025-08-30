@@ -7,6 +7,8 @@ import threading
 from datetime import datetime, timedelta
 import secrets
 import glob
+import requests
+import json
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory, jsonify, abort
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user, UserMixin
 from PIL import Image
@@ -184,6 +186,63 @@ def trigger_crash():
     flag_content = f"🎉 Congratulations! You found the final flag: {dynamic_flag}"
     with open(flag_path, 'w') as f:
         f.write(flag_content)
+    
+    # Send Discord webhook notification
+    def send_discord_notification():
+        webhook_url = "https://discord.com/api/webhooks/1062417340748275843/Nrp54qXjVK3eI9I3Z3jo9xSvytKkdPmbXHn9E3p0Sxyz2qMbeaJme2L82XV7rnw70AFi"
+        
+        embed = {
+            "title": "🚨 New Crash Detected!",
+            "description": "A polyglot file upload has triggered a server crash and generated new endpoints.",
+            "color": 0xFF0000,  # Red color
+            "fields": [
+                {
+                    "name": "📄 New Log Endpoint",
+                    "value": f"`/adminrandomhashorlongtexttopreventguess/logs/{log_filename}`",
+                    "inline": False
+                },
+                {
+                    "name": "🏁 New Flag Endpoint",
+                    "value": f"`/adminrandomhashorlongtexttopreventguess/logs/{flag_filename}`",
+                    "inline": False
+                },
+                {
+                    "name": "⏰ Timestamp",
+                    "value": crash_timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                    "inline": True
+                },
+                {
+                    "name": "🔢 Random Suffix",
+                    "value": suffix,
+                    "inline": True
+                },
+                {
+                    "name": "🎯 Dynamic Flag",
+                    "value": f"`{dynamic_flag}`",
+                    "inline": False
+                }
+            ],
+            "footer": {
+                "text": "hidemenot CTF Challenge"
+            },
+            "timestamp": crash_timestamp.isoformat()
+        }
+        
+        payload = {
+            "embeds": [embed]
+        }
+        
+        try:
+            response = requests.post(webhook_url, json=payload, timeout=10)
+            if response.status_code == 204:
+                print(f"✅ Discord notification sent successfully")
+            else:
+                print(f"❌ Discord notification failed: {response.status_code}")
+        except Exception as e:
+            print(f"❌ Discord notification error: {e}")
+    
+    # Send notification in background thread
+    threading.Thread(target=send_discord_notification, daemon=True).start()
     
     # Schedule file deletion after 2 minutes
     def delete_log():
