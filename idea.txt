@@ -72,16 +72,17 @@ Too late. File deleted.
 
 If accessed in time, the log file contains:
 
-[INFO] File saved to /adminrandomhashorlongtexttopreventguess/flag.txt
+[INFO] Server crash detected - polyglot file upload
+[INFO] Dynamic flag file: /adminrandomhashorlongtexttopreventguess/logs/flag_2025-08-30_10-52-18_c736f7.txt
 [SECURITY] Access limited to internal host 127.0.0.1
 
 7. Bypass Host-Based Access Control
 
-Trying to directly access /adminrandomlongtexthere/flag.txt results in:
+Trying to directly access the dynamic flag path results in:
 
 Access Denied. Redirecting to a Rickroll video.
 
 
 However, modifying the Host header to 127.0.0.1 bypasses this check.
 
-The server then reveals the final flag!
+The server then reveals the dynamic flag!

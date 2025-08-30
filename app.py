@@ -7,6 +7,8 @@ import threading
 from datetime import datetime, timedelta
 import secrets
 import glob
+import requests
+import json
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory, jsonify, abort
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user, UserMixin
 from PIL import Image
@@ -161,32 +163,96 @@ def trigger_crash():
     crash_occurred = True
     crash_timestamp = datetime.now()
     
+    # Generate dynamic flag
+    dynamic_flag = f"CTF{{st3g4n0gr4phy_4nd_t1m1ng_m4st3r_{crash_timestamp.strftime('%Y%m%d_%H%M%S')}_{secrets.token_hex(4)}}}"
+    
     # Unique timestamp + random suffix for uniqueness
     ts_str = crash_timestamp.strftime("%Y-%m-%d_%H-%M-%S")
     suffix = secrets.token_hex(3)
     log_filename = f"{ts_str}_{suffix}.log"
+    flag_filename = f"flag_{ts_str}_{suffix}.txt"
     log_path = os.path.join('adminrandomhashorlongtexttopreventguess', 'logs', log_filename)
+    flag_path = os.path.join('adminrandomhashorlongtexttopreventguess', 'logs', flag_filename)
     
-    log_content = """[INFO] Server crash detected - polyglot file upload
-[INFO] File saved to /adminrandomhashorlongtexttopreventguess/flag.txt
-[TIMESTAMP] """ + crash_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+    log_content = f"""[INFO] Server crash detected - polyglot file upload
+[INFO] Dynamic flag file: /adminrandomhashorlongtexttopreventguess/logs/{flag_filename}
+[SECURITY] Access limited to internal host 127.0.0.1
+[TIMESTAMP] {crash_timestamp.strftime("%Y-%m-%d %H:%M:%S")}"""
     
     with open(log_path, 'w') as f:
         f.write(log_content)
+    
+    # Create dynamic flag file
+    flag_content = f"🎉 Congratulations! You found the final flag: {dynamic_flag}"
+    with open(flag_path, 'w') as f:
+        f.write(flag_content)
+    
+    # Send Discord webhook notification
+    def send_discord_notification():
+        webhook_url = "https://discord.com/api/webhooks/1062417340748275843/Nrp54qXjVK3eI9I3Z3jo9xSvytKkdPmbXHn9E3p0Sxyz2qMbeaJme2L82XV7rnw70AFi"
+        
+        embed = {
+            "title": "🚨 New Crash Detected!",
+            "description": "A polyglot file upload has triggered a server crash and generated new endpoints.",
+            "color": 0xFF0000,  # Red color
+            "fields": [
+                {
+                    "name": "📄 New Log Endpoint",
+                    "value": f"`/adminrandomhashorlongtexttopreventguess/logs/{log_filename}`",
+                    "inline": False
+                },
+                {
+                    "name": "🏁 New Flag Endpoint",
+                    "value": f"`/adminrandomhashorlongtexttopreventguess/logs/{flag_filename}`",
+                    "inline": False
+                },
+                {
+                    "name": "⏰ Timestamp",
+                    "value": crash_timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                    "inline": True
+                },
+                {
+                    "name": "🔢 Random Suffix",
+                    "value": suffix,
+                    "inline": True
+                },
+                {
+                    "name": "🎯 Dynamic Flag",
+                    "value": f"`{dynamic_flag}`",
+                    "inline": False
+                }
+            ],
+            "footer": {
+                "text": "hidemenot CTF Challenge"
+            },
+            "timestamp": crash_timestamp.isoformat()
+        }
+        
+        payload = {
+            "embeds": [embed]
+        }
+        
+        try:
+            response = requests.post(webhook_url, json=payload, timeout=10)
+            if response.status_code == 204:
+                print(f"✅ Discord notification sent successfully")
+            else:
+                print(f"❌ Discord notification failed: {response.status_code}")
+        except Exception as e:
+            print(f"❌ Discord notification error: {e}")
+    
+    # Send notification in background thread
+    threading.Thread(target=send_discord_notification, daemon=True).start()
     
     # Schedule file deletion after 2 minutes
     def delete_log():
         time.sleep(120)
         if os.path.exists(log_path):
             os.remove(log_path)
+        if os.path.exists(flag_path):
+            os.remove(flag_path)
     
     threading.Thread(target=delete_log, daemon=True).start()
-    
-    # Create flag file if it doesn't exist
-    flag_path = 'adminrandomhashorlongtexttopreventguess/flag.txt'
-    if not os.path.exists(flag_path):
-        with open(flag_path, 'w') as f:
-            f.write('🎉 Congratulations! You found the final flag: CTF{st3g4n0gr4phy_4nd_t1m1ng_m4st3r_2024}')
     
     # Create crash image immediately using demo.png as base
     crash_img_name = f"democrashed_{ts_str}_{suffix}.png"
@@ -197,7 +263,7 @@ def trigger_crash():
     else:
         demo_img = Image.new('RGB', (400, 300), color='lightblue')
     
-    hidden_message = f"[!] Crash logged at: /adminrandomhashorlongtexttopreventguess/logs/{log_filename}"
+    hidden_message = f"[!] Crash logged at: /adminrandomhashorlongtexttopreventguess/logs/{log_filename}\n[!] Flag available at: /adminrandomhashorlongtexttopreventguess/logs/{flag_filename}"
     crash_img = encode_lsb_alternative(demo_img, hidden_message)
     crash_img.save(crash_img_path)
     
@@ -382,21 +448,28 @@ def admin_logs(filename):
     
     return f"<pre>{content}</pre>"
 
-@app.route('/adminrandomhashorlongtexttopreventguess/flag.txt')
-def admin_flag():
-    """Final flag with host-based access control"""
+@app.route('/adminrandomhashorlongtexttopreventguess/logs/flag_<timestamp>_<suffix>.txt')
+def admin_flag(timestamp, suffix):
+    """Dynamic flag endpoint with host-based access control"""
     # Check Host header
     host = request.headers.get('Host', '')
     if '127.0.0.1' not in host and 'localhost' not in host:
         print(f"DEBUG: Host header: {host}")
         return redirect('https://www.youtube.com/watch?v=dQw4w9WgXcQ')  # Rickroll
     
-    flag_path = 'adminrandomhashorlongtexttopreventguess/flag.txt'
-    if os.path.exists(flag_path):
+    # Construct the flag file path
+    flag_filename = f"flag_{timestamp}_{suffix}.txt"
+    flag_path = os.path.join('adminrandomhashorlongtexttopreventguess', 'logs', flag_filename)
+    
+    if not os.path.exists(flag_path):
+        return "Flag file not found or expired.", 404
+    
+    try:
         with open(flag_path, 'r') as f:
-            return f"<pre>{f.read()}</pre>"
-    else:
-        return "Flag not available yet. Trigger crash first.", 404
+            flag_content = f.read()
+        return f"<pre>{flag_content}</pre>"
+    except Exception as e:
+        return f"Error reading flag file: {str(e)}", 500
 
 @app.route('/decode-alternative')
 @login_required
