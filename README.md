@@ -98,7 +98,8 @@ A sophisticated web application that combines steganography with multiple securi
 
 9. **Read Log Content**
    ```
-   [INFO] File saved to /adminrandomhashorlongtexttopreventguess/flag.txt
+   [INFO] Server crash detected - polyglot file upload
+   [INFO] Dynamic flag generated: CTF{st3g4n0gr4phy_4nd_t1m1ng_m4st3r_20250101_120000_a1b2c3d4}
    [SECURITY] Access limited to internal host 127.0.0.1
    ```
 
@@ -115,9 +116,9 @@ A sophisticated web application that combines steganography with multiple securi
     - Or use browser developer tools to modify the request
 
 12. **Capture the Final Flag**
-    - Successfully bypassing the host check reveals:
+    - Successfully bypassing the host check reveals the dynamic flag from the log file:
       ```
-      🎉 Congratulations! You found the final flag: CTF{st3g4n0gr4phy_4nd_t1m1ng_m4st3r_2024}
+      🎉 Congratulations! You found the final flag: CTF{st3g4n0gr4phy_4nd_t1m1ng_m4st3r_20250101_120000_a1b2c3d4}
       ```
 
 ## 🛠️ Technical Implementation
@@ -158,8 +159,7 @@ findmenot/
 │   ├── images/          # Demo images
 │   └── uploads/         # User uploaded files
 └── adminrandomhashorlongtexttopreventguess/
-    ├── logs/            # Time-sensitive log files
-    └── flag.txt         # Final challenge flag
+    └── logs/            # Time-sensitive log files with dynamic flags
 ```
 
 ### Key Functions

@@ -161,15 +161,19 @@ def trigger_crash():
     crash_occurred = True
     crash_timestamp = datetime.now()
     
+    # Generate dynamic flag
+    dynamic_flag = f"CTF{{st3g4n0gr4phy_4nd_t1m1ng_m4st3r_{crash_timestamp.strftime('%Y%m%d_%H%M%S')}_{secrets.token_hex(4)}}}"
+    
     # Unique timestamp + random suffix for uniqueness
     ts_str = crash_timestamp.strftime("%Y-%m-%d_%H-%M-%S")
     suffix = secrets.token_hex(3)
     log_filename = f"{ts_str}_{suffix}.log"
     log_path = os.path.join('adminrandomhashorlongtexttopreventguess', 'logs', log_filename)
     
-    log_content = """[INFO] Server crash detected - polyglot file upload
-[INFO] File saved to /adminrandomhashorlongtexttopreventguess/flag.txt
-[TIMESTAMP] """ + crash_timestamp.strftime("%Y-%m-%d %H:%M:%S")
+    log_content = f"""[INFO] Server crash detected - polyglot file upload
+[INFO] Dynamic flag generated: {dynamic_flag}
+[SECURITY] Access limited to internal host 127.0.0.1
+[TIMESTAMP] {crash_timestamp.strftime("%Y-%m-%d %H:%M:%S")}"""
     
     with open(log_path, 'w') as f:
         f.write(log_content)
@@ -181,12 +185,6 @@ def trigger_crash():
             os.remove(log_path)
     
     threading.Thread(target=delete_log, daemon=True).start()
-    
-    # Create flag file if it doesn't exist
-    flag_path = 'adminrandomhashorlongtexttopreventguess/flag.txt'
-    if not os.path.exists(flag_path):
-        with open(flag_path, 'w') as f:
-            f.write('🎉 Congratulations! You found the final flag: CTF{st3g4n0gr4phy_4nd_t1m1ng_m4st3r_2024}')
     
     # Create crash image immediately using demo.png as base
     crash_img_name = f"democrashed_{ts_str}_{suffix}.png"
@@ -391,12 +389,27 @@ def admin_flag():
         print(f"DEBUG: Host header: {host}")
         return redirect('https://www.youtube.com/watch?v=dQw4w9WgXcQ')  # Rickroll
     
-    flag_path = 'adminrandomhashorlongtexttopreventguess/flag.txt'
-    if os.path.exists(flag_path):
-        with open(flag_path, 'r') as f:
-            return f"<pre>{f.read()}</pre>"
-    else:
+    # Find the most recent log file to get the dynamic flag
+    log_files = glob.glob('adminrandomhashorlongtexttopreventguess/logs/*.log')
+    if not log_files:
         return "Flag not available yet. Trigger crash first.", 404
+    
+    # Get the most recent log file
+    latest_log = max(log_files, key=os.path.getmtime)
+    
+    try:
+        with open(latest_log, 'r') as f:
+            log_content = f.read()
+        
+        # Extract the dynamic flag from the log content
+        for line in log_content.split('\n'):
+            if line.startswith('[INFO] Dynamic flag generated:'):
+                flag = line.split('Dynamic flag generated:')[1].strip()
+                return f"<pre>🎉 Congratulations! You found the final flag: {flag}</pre>"
+        
+        return "Flag not found in log file.", 404
+    except Exception as e:
+        return f"Error reading log file: {str(e)}", 500
 
 @app.route('/decode-alternative')
 @login_required
