@@ -555,20 +555,31 @@ def admin_logs(filename):
 
 @app.route('/adminrandomhashorlongtexttopreventguess/logs/flag_<timestamp>_<suffix>.txt')
 def admin_flag(timestamp, suffix):
-    """Dynamic flag endpoint with host-based access control"""
-    # Check Host header
-    host = request.headers.get('Host', '')
-    if '127.0.0.1' not in host and 'localhost' not in host:
-        print(f"DEBUG: Host header: {host}")
-        return redirect('https://www.youtube.com/watch?v=dQw4w9WgXcQ')  # Rickroll
-    
-    # Construct the flag file path
+    """Primary flag endpoint now backs up the file and redirects with a hint header."""
+    # Log only accesses to the primary .txt (not the backup)
+    try:
+        access_log_path = os.path.join('adminrandomhashorlongtexttopreventguess', 'logs', 'flag_access.log')
+        with open(access_log_path, 'a') as lf:
+            lf.write(f"[ACCESS] {datetime.now().isoformat()} - /adminrandomhashorlongtexttopreventguess/logs/flag_{timestamp}_{suffix}.txt\n")
+    except Exception:
+        pass
+
+    # Always hint and redirect; do not disclose backup in logs or page content
+    r = redirect('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+    r.headers['X-Backup-Created'] = 'true'
+    r.headers['Cache-Control'] = 'no-store'
+    r.data = b'file backedup'
+    return r
+
+@app.route('/adminrandomhashorlongtexttopreventguess/logs/flag_<timestamp>_<suffix>.txt~')
+def admin_flag_backup(timestamp, suffix):
+    """Backup flag endpoint that serves the actual flag without logging."""
     flag_filename = f"flag_{timestamp}_{suffix}.txt"
     flag_path = os.path.join('adminrandomhashorlongtexttopreventguess', 'logs', flag_filename)
-    
+
     if not os.path.exists(flag_path):
         return "Flag file not found or expired.", 404
-    
+
     try:
         with open(flag_path, 'r') as f:
             flag_content = f.read()
