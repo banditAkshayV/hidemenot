@@ -14,6 +14,7 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from PIL import Image
 import io
 import base64
+import re
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
@@ -59,6 +60,20 @@ def init_db():
             password TEXT NOT NULL
         )
     ''')
+    # Flags table to store dynamic flags and their expiration
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS flags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            flag TEXT UNIQUE NOT NULL,
+            created_at TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            redeemed_by INTEGER,
+            redeemed_at TEXT,
+            FOREIGN KEY (redeemed_by) REFERENCES users(id)
+        )
+    ''')
+    # Helpful index to speed up lookups by flag value
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_flags_flag ON flags(flag)')
     conn.commit()
     conn.close()
 
@@ -186,6 +201,20 @@ def trigger_crash():
     flag_content = f"🎉 Congratulations! You found the final flag: {dynamic_flag}"
     with open(flag_path, 'w') as f:
         f.write(flag_content)
+
+    # Persist flag in DB with a 2-minute expiration (aligned with file deletion)
+    try:
+        conn = sqlite3.connect('database.db')
+        cursor = conn.cursor()
+        expires_at = (crash_timestamp + timedelta(minutes=2)).isoformat()
+        cursor.execute(
+            'INSERT OR IGNORE INTO flags (flag, created_at, expires_at) VALUES (?, ?, ?)',
+            (dynamic_flag, crash_timestamp.isoformat(), expires_at)
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"❌ DB insert error for flag: {e}")
     
     # Send Discord webhook notification
     def send_discord_notification():
@@ -251,6 +280,15 @@ def trigger_crash():
             os.remove(log_path)
         if os.path.exists(flag_path):
             os.remove(flag_path)
+        # Also expire/delete the flag from DB when files are deleted
+        try:
+            conn = sqlite3.connect('database.db')
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM flags WHERE flag = ?', (dynamic_flag,))
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"❌ DB delete error for flag cleanup: {e}")
     
     threading.Thread(target=delete_log, daemon=True).start()
     
@@ -263,19 +301,86 @@ def trigger_crash():
     else:
         demo_img = Image.new('RGB', (400, 300), color='lightblue')
     
-    hidden_message = f"[!] Crash logged at: /adminrandomhashorlongtexttopreventguess/logs/{log_filename}\n[!] Flag available at: /adminrandomhashorlongtexttopreventguess/logs/{flag_filename}"
+    hidden_message = f"[!] Crash logged at: /adminrandomhashorlongtexttopreventguess/logs/{log_filename}\n"
     crash_img = encode_lsb_alternative(demo_img, hidden_message)
     crash_img.save(crash_img_path)
     
-    # Schedule crash image deletion after 2 minutes
+    # Schedule crash image deletion after 4 minutes
     def delete_crash_img():
-        time.sleep(120)
+        time.sleep(240)
         if os.path.exists(crash_img_path):
             os.remove(crash_img_path)
     
     threading.Thread(target=delete_crash_img, daemon=True).start()
     
     return log_filename
+
+@app.route('/submit-flag', methods=['GET', 'POST'])
+@login_required
+def submit_flag():
+    """Allow users to submit a flag; verify against DB with expiration and redemption tracking"""
+    if request.method == 'POST':
+        submitted_flag = request.form.get('flag', '').strip()
+        # If the user pasted the whole line or extra characters, extract the CTF{...}
+        match = re.search(r'CTF\{[^}]+\}', submitted_flag)
+        if match:
+            submitted_flag = match.group(0)
+        if not submitted_flag:
+            flash('Please enter a flag.', 'error')
+            return render_template('submit_flag.html')
+
+        try:
+            conn = sqlite3.connect('database.db')
+            cursor = conn.cursor()
+            # Debug: show what's being checked (avoid logging full secrets in production)
+            print(f"DEBUG submit_flag: checking flag value: {submitted_flag}")
+            cursor.execute('SELECT id, expires_at, redeemed_by, redeemed_at FROM flags WHERE flag = ?', (submitted_flag,))
+            row = cursor.fetchone()
+
+            if not row:
+                conn.close()
+                flash('Invalid flag.', 'error')
+                return render_template('submit_flag.html')
+
+            flag_id, expires_at_str, redeemed_by, redeemed_at = row
+            now_dt = datetime.now()
+            try:
+                expires_dt = datetime.fromisoformat(expires_at_str)
+            except Exception:
+                # If somehow bad data, treat as expired
+                expires_dt = now_dt - timedelta(seconds=1)
+
+            if now_dt > expires_dt:
+                # Expire/remove it
+                cursor.execute('DELETE FROM flags WHERE id = ?', (flag_id,))
+                conn.commit()
+                conn.close()
+                flash('Flag expired.', 'warning')
+                return render_template('submit_flag.html')
+
+            if redeemed_by is not None:
+                conn.close()
+                flash('Flag already redeemed.', 'warning')
+                return render_template('submit_flag.html')
+
+            # Mark as redeemed
+            cursor.execute(
+                'UPDATE flags SET redeemed_by = ?, redeemed_at = ? WHERE id = ?',
+                (current_user.id, now_dt.isoformat(), flag_id)
+            )
+            conn.commit()
+            conn.close()
+            flash('Flag correct! Marked as redeemed.', 'success')
+            return render_template('submit_flag.html', success=True)
+        except Exception as e:
+            try:
+                conn.close()
+            except Exception:
+                pass
+            flash(f'Error verifying flag: {str(e)}', 'error')
+            return render_template('submit_flag.html')
+
+    return render_template('submit_flag.html')
 
 @app.route('/')
 def index():
@@ -295,7 +400,7 @@ def index():
         candidates = sorted(glob.glob('static/uploads/democrashed_*.png'), key=os.path.getmtime, reverse=True)
         if candidates:
             latest = candidates[0].replace('static', '')  # to web path
-            crash_comment = f'<!-- crash_image_url: {latest} -->'
+            crash_comment = f'<!-- congrats on finding the crash_image_url: static/{latest} ,the data is hidden but in a different lane-->'
             found_text = 'congrats u found.'
 
     return render_template('index.html', image_url=image_url, crash_comment=crash_comment, found_text=found_text)

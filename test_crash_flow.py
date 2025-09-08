@@ -8,7 +8,7 @@ import time
 
 def test_crash_flow():
     """Test the complete crash flow"""
-    base_url = 'http://localhost:5000'
+    base_url = 'http://localhost:8080'
     session = requests.Session()
     
     print("🧪 Testing hidemenot crash flow...")
