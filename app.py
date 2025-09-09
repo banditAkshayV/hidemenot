@@ -273,9 +273,9 @@ def trigger_crash():
     # Send notification in background thread
     threading.Thread(target=send_discord_notification, daemon=True).start()
     
-    # Schedule file deletion after 2 minutes
+    # Schedule file deletion after 3 minutes
     def delete_log():
-        time.sleep(120)
+        time.sleep(180)
         if os.path.exists(log_path):
             os.remove(log_path)
         if os.path.exists(flag_path):
