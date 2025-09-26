@@ -100,10 +100,9 @@ A sophisticated web application that combines steganography with multiple securi
    ```
    [INFO] Server crash detected - polyglot file upload
    [INFO] Dynamic flag file: /adminrandomhashorlongtexttopreventguess/logs/flag_2025-08-30_10-52-18_c736f7.txt
-   [SECURITY] Access limited to internal host 127.0.0.1
    ```
 
-### Stage 6: Host Header Bypass
+### Stage 6: Publicly accessable backup file
 10. **Extract Dynamic Flag Path**
     - The log file contains the path to the dynamic flag file
     - Example: `/adminrandomhashorlongtexttopreventguess/logs/flag_2025-08-30_10-52-18_c736f7.txt`
@@ -112,12 +111,8 @@ A sophisticated web application that combines steganography with multiple securi
     - Try accessing the dynamic flag path
     - You'll be redirected to a Rickroll video
 
-12. **Bypass with Host Header**
-    - Use curl or modify the Host header to `127.0.0.1`:
-      ```bash
-      curl -H "Host: 127.0.0.1" http://localhost:5000/adminrandomhashorlongtexttopreventguess/logs/flag_2025-08-30_10-52-18_c736f7.txt
-      ```
-    - Or use browser developer tools to modify the request
+12. **Find the backup file**
+    - Add the backup file extension ~ to the filename and the file is accessed 
 
 13. **Capture the Final Flag**
     - Successfully bypassing the host check reveals the dynamic flag:
