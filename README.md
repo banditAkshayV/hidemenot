@@ -18,7 +18,6 @@ A sophisticated web application that combines steganography with multiple securi
 - **Polyglot File Detection**: Server crash mechanism triggered by magic byte mismatches
 - **Alternative LSB Encoding**: Crash images use different encoding methods (4th LSB bit)
 - **Time-Sensitive Resources**: Log files that auto-delete after 5 minutes
-- **Host-Based Access Control**: Final flag protected by HTTP Host header validation
 - **Hidden Admin Directories**: Concealed paths not accessible through normal navigation
 
 ## 🚀 Quick Start
@@ -136,7 +135,6 @@ A sophisticated web application that combines steganography with multiple securi
 ### Challenge Mechanisms
 - **Polyglot Detection**: Analyzes magic bytes vs content structure
 - **Thread-based File Deletion**: Automatic log cleanup after 5 minutes
-- **HTTP Header Validation**: Host-based access control
 - **Dynamic Path Generation**: Date-based log file names
 
 ## 🔧 Development & Customization
@@ -194,7 +192,7 @@ findmenot/
 1. **Magic Byte Mismatch**: Polyglot file uploads trigger server crashes
 2. **Information Disclosure**: Hidden HTML comments reveal sensitive paths
 3. **Time-based Attacks**: Race condition with log file deletion
-4. **Host Header Injection**: Bypassable access controls
+4. **Backup files**: Improper storage of backup files
 
 ### Defensive Measures
 - Input validation for file types and sizes
@@ -245,7 +243,7 @@ ls -la adminrandomhashorlongtexttopreventguess/logs/
 3. **Code Detective**: Find hidden comments in source code
 4. **Cryptanalyst**: Decode crash image with alternative methods
 5. **Speed Runner**: Access log files within time limit
-6. **Master Hacker**: Bypass host-based access controls for final flag
+6. **Master Hacker**: Bypass access controls for final flag
 
 ## 🤝 Contributing
 
